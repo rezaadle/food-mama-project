@@ -1,0 +1,14 @@
+# Don't track these folders
+.ipynb_checkpoints/
+vsalamand/
+
+
+# Content of datasets #
+#######################
+recipes_export.csv
+items_export.csv
+
+
+# And itself #
+##############
+.DS_Store
