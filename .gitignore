@@ -8,7 +8,6 @@ vsalamand/
 *.csv
 
 
-# And itself #
-##############
-.gitignore
+# And these files #
+###################
 .DS_Store
