@@ -5,10 +5,10 @@ vsalamand/
 
 # Content of datasets #
 #######################
-recipes_export.csv
-items_export.csv
+*.csv
 
 
 # And itself #
 ##############
+.gitignore
 .DS_Store
