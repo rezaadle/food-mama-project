@@ -6,6 +6,9 @@ Created on Wed May  1 11:52:15 2019
 @author: Reza
 """
 
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+
 def preprocessing(dataframes):
     ''' foods table '''
     # Create a copy of table and then drop unnecessary columns, 
@@ -64,5 +67,34 @@ def preprocessing(dataframes):
     
     # Replace "NaN" values with "unknown" rating
     df_2.rating.fillna("unknown", inplace=True)
-
+    # Correct value of "0" in "servings" column from its link data with "2"
+    df_2.loc[df_2[df_2.servings == 0].index, ["servings"]] = 2
+    
     return df_0, df_1, df_2
+
+
+def merging(tables):
+    # Merge tables to create a "meta_data" dataframe
+    recipes, items, foods = tables
+    
+    merge_table = pd.merge(recipes, items, left_on='title', right_on='title_recipe')
+    merge_table = merge_table.loc[:, ['recipe_id', 'title', 'servings', 'origin', 'rating', 'name_food']]
+
+    meta_data = pd.merge(merge_table, foods, left_on='name_food', right_on='name')
+    meta_data.drop("name_food", axis=1, inplace=True)
+    
+    return meta_data
+
+
+def converting(data):
+    # Convert string features to nominal categorical variables
+    rating_cat = {"rating": {"avoid": 1, "limit": 2, "good": 3, "excellent": 4, "unknown": 0}}
+    data.replace(rating_cat, inplace=True)
+    
+    data.availability = data.availability.astype('category')
+    data["availability_cat"] = data.availability.cat.codes
+     
+    lb_make = LabelEncoder()
+    data["origin_id"] = lb_make.fit_transform(data["origin"])
+    
+    return data
