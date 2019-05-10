@@ -7,6 +7,7 @@ Created on Wed May  1 11:52:15 2019
 """
 
 import pandas as pd
+import numpy as np
 from sklearn.preprocessing import LabelEncoder
 
 def preprocessing(dataframes):
@@ -52,6 +53,12 @@ def preprocessing(dataframes):
     df_1 = dataframes[1].copy()
     df_1.drop(["Quantity"], axis=1, inplace=True)
     df_1.columns = ['id', 'recipe-ingredient', 'name_food', 'title_recipe', 'ingredients_recipe', 'origin_recipe']
+    
+    # Find duplicate rows and remove them
+    unique_lst = np.asarray([x[1].values[0] for x in list(df_1.groupby(["title_recipe","name_food"])["id"])])
+    id_lst = df_1["id"].values
+    df_1 = df_1[~df_1.id.isin(list(set(id_lst) - set(unique_lst)))]
+    
     df_1.set_index("id", inplace=True)
 
     ''' recipes table '''
@@ -91,13 +98,25 @@ def converting(data):
     rating_cat = {"rating": {"avoid": 1, "limit": 2, "good": 3, "excellent": 4, "unknown": 0}}
     data.replace(rating_cat, inplace=True)
 
-    # Convert string to an integer list in availability column
-    data["availability_lst"] = [[int(s) for s in s.replace(',','').split(" ")] for s in data.availability]
-
-    data.availability = data.availability.astype('category')
-    data["availability_cat"] = data.availability.cat.codes
-
     lb_make = LabelEncoder()
     data["origin_id"] = lb_make.fit_transform(data["origin"])
+    
+    # Convert string to an integer list in availability column
+    data["availability_lst"] = [[int(s) for s in s.replace(',','').split(" ")] for s in data.availability]
+    
+    # Find the intersection of ingredients availability in a recipe
+    lists = list(data.groupby("recipe_id")["availability_lst"])
+    L = [lst[1].values for lst in lists]
+    I = [lst[0] for lst in lists]
+
+    for i, lst in enumerate(L):
+        months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        for l in lst:
+            months = list(set(months) & set(l))
+    
+        data.loc[data.recipe_id == I[i], ["availability"]] = str(months)
+    
+    data.availability = data.availability.astype('category')
+    data["availability_cat"] = data.availability.cat.codes
 
     return data
