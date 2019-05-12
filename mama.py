@@ -53,12 +53,12 @@ def preprocessing(dataframes):
     df_1 = dataframes[1].copy()
     df_1.drop(["Quantity"], axis=1, inplace=True)
     df_1.columns = ['id', 'recipe-ingredient', 'name_food', 'title_recipe', 'ingredients_recipe', 'origin_recipe']
-    
+
     # Find duplicate rows and remove them
     unique_lst = np.asarray([x[1].values[0] for x in list(df_1.groupby(["title_recipe","name_food"])["id"])])
     id_lst = df_1["id"].values
     df_1 = df_1[~df_1.id.isin(list(set(id_lst) - set(unique_lst)))]
-    
+
     df_1.set_index("id", inplace=True)
 
     ''' recipes table '''
@@ -100,10 +100,10 @@ def converting(data):
 
     lb_make = LabelEncoder()
     data["origin_id"] = lb_make.fit_transform(data["origin"])
-    
+
     # Convert string to an integer list in availability column
     data["availability_lst"] = [[int(s) for s in s.replace(',','').split(" ")] for s in data.availability]
-    
+
     # Find the intersection of ingredients availability in a recipe
     lists = list(data.groupby("recipe_id")["availability_lst"])
     L = [lst[1].values for lst in lists]
@@ -113,10 +113,21 @@ def converting(data):
         months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
         for l in lst:
             months = list(set(months) & set(l))
-    
-        data.loc[data.recipe_id == I[i], ["availability"]] = str(months)
-    
-    data.availability = data.availability.astype('category')
-    data["availability_cat"] = data.availability.cat.codes
+
+        if len(months) == 0:
+            data.loc[data.recipe_id == I[i], ["availability"]] = '0'
+        else:
+            data.loc[data.recipe_id == I[i], ["availability"]] = str(months).strip('[]')
+
+    data['Cat'] = [l.replace(',','').replace(' ','') for l in data.availability]
+
+    # Sort the values and create the ordered encoding
+    c = sorted(set(data.Cat), key=lambda x: int(x))
+    encode_df = pd.DataFrame([[i,n] for i,n in enumerate(c)])
+    encode_df = encode_df.rename(columns = lambda x : 'tag_' + str(x))
+
+    data = pd.merge(data, encode_df, left_on='Cat', right_on='tag_1')
+    data.rename(columns={'tag_0':'availability_cat'}, inplace=True)
+    data.drop(['Cat','tag_1'], axis=1, inplace=True)
 
     return data
