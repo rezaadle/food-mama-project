@@ -63,7 +63,7 @@ def preprocessing(dataframes):
 
     ''' recipes table '''
     df_2 = dataframes[2].copy()
-    df_2.drop(["recommendable","status"], axis=1, inplace=True)
+    df_2.drop(["recommendable","status","created_at","updated_at"], axis=1, inplace=True)
     df_2.rename(columns={'id': 'recipe_id'}, inplace=True)
 
     # Add the Mama web link recipes for the missing values in the "link" column
